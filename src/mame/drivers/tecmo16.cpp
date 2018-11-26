@@ -59,7 +59,7 @@ void tecmo16_state::fstarfrc_map(address_map &map)
 	map(0x150030, 0x150031).portr("DSW2").nopw();   /* ??? */
 	map(0x150040, 0x150041).portr("DSW1");
 	map(0x150050, 0x150051).portr("P1_P2");
-//	map(0x160000, 0x160001).nopr();   /* ??? Read at every scene changes */
+//  map(0x160000, 0x160001).nopr();   /* ??? Read at every scene changes */
 	map(0x160000, 0x160001).w(FUNC(tecmo16_state::scroll_char_x_w));
 	map(0x16000c, 0x16000d).w(FUNC(tecmo16_state::scroll_x_w));
 	map(0x160012, 0x160013).w(FUNC(tecmo16_state::scroll_y_w));
@@ -381,8 +381,8 @@ MACHINE_CONFIG_START(tecmo16_state::fstarfrc)
 	MCFG_PALETTE_ADD_INIT_BLACK("palette", 4096)
 	MCFG_PALETTE_FORMAT(xxxxBBBBGGGGRRRR)
 
-	MCFG_DEVICE_ADD("spritegen", TECMO_SPRITE, 0)
-	MCFG_TECMO_SPRITE_GFX_REGION(2)
+	TECMO_SPRITE(config, m_sprgen, 0);
+	m_sprgen->set_gfx_region(2);
 
 	TECMO_MIXER(config, m_mixer, 0);
 	m_mixer->set_mixer_shifts(10,9,4);
@@ -396,13 +396,12 @@ MACHINE_CONFIG_START(tecmo16_state::fstarfrc)
 	SPEAKER(config, "lspeaker").front_left();
 	SPEAKER(config, "rspeaker").front_right();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
+	GENERIC_LATCH_8(config, "soundlatch").data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
-	MCFG_DEVICE_ADD("ymsnd", YM2151, MASTER_CLOCK/6) // 4 MHz
-	MCFG_YM2151_IRQ_HANDLER(INPUTLINE("audiocpu", 0))
-	MCFG_SOUND_ROUTE(0, "lspeaker", 0.60)
-	MCFG_SOUND_ROUTE(1, "rspeaker", 0.60)
+	ym2151_device &ymsnd(YM2151(config, "ymsnd", MASTER_CLOCK/6)); // 4 MHz
+	ymsnd.irq_handler().set_inputline(m_audiocpu, 0);
+	ymsnd.add_route(0, "lspeaker", 0.60);
+	ymsnd.add_route(1, "rspeaker", 0.60);
 
 	MCFG_DEVICE_ADD("oki", OKIM6295, OKI_CLOCK/8, okim6295_device::PIN7_HIGH) // sample rate 1 MHz / 132
 	MCFG_SOUND_ROUTE(ALL_OUTPUTS, "lspeaker", 0.40)

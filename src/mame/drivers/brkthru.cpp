@@ -399,8 +399,8 @@ MACHINE_CONFIG_START(brkthru_state::brkthru)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
+	GENERIC_LATCH_8(config, m_soundlatch);
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
 	MCFG_DEVICE_ADD("ym1", YM2203, MASTER_CLOCK/8)
 	MCFG_SOUND_ROUTE(0, "mono", 0.10)
@@ -451,8 +451,8 @@ MACHINE_CONFIG_START(brkthru_state::darwin)
 	/* sound hardware */
 	SPEAKER(config, "mono").front_center();
 
-	MCFG_GENERIC_LATCH_8_ADD("soundlatch")
-	MCFG_GENERIC_LATCH_DATA_PENDING_CB(INPUTLINE("audiocpu", INPUT_LINE_NMI))
+	GENERIC_LATCH_8(config, m_soundlatch);
+	m_soundlatch->data_pending_callback().set_inputline(m_audiocpu, INPUT_LINE_NMI);
 
 	MCFG_DEVICE_ADD("ym1", YM2203, MASTER_CLOCK/8)
 	MCFG_SOUND_ROUTE(0, "mono", 0.10)
@@ -553,14 +553,13 @@ ROM_START( brkthruj )
 	ROM_LOAD( "brkthru.5",    0x8000, 0x8000, CRC(c309435f) SHA1(82914004c2b169a7c31aa49af83a699ebbc7b33f) )
 ROM_END
 
-// Tecfri PCB with Data East license. 
-// Although only program ROM "8.bin" is marked as BAD_DUMP, it would be better to redump all program ROMs, to be 100% sure it's a good set.
+// Tecfri PCB with Data East license.
 ROM_START( brkthrut )
 	ROM_REGION( 0x20000, "maincpu", 0 )     /* 64k for main CPU + 64k for banked ROMs */
 	ROM_LOAD( "5.bin", 0x04000, 0x4000,          CRC(158e660a) SHA1(608082e8b49d3c5595c25be8c19b80402310406a) )
-	ROM_LOAD( "6.bin", 0x08000, 0x8000,          CRC(1d88c59f) SHA1(d2cbcb0fffc21237d9b9e821a9122e4b447cf22b) )
+	ROM_LOAD( "6.bin", 0x08000, 0x8000, BAD_DUMP CRC(1d88c59f) SHA1(d2cbcb0fffc21237d9b9e821a9122e4b447cf22b) )
 	ROM_LOAD( "8.bin", 0x10000, 0x8000, BAD_DUMP CRC(0f933b74) SHA1(3e544346e84a5690d757ebde823895ca98b1cd0a) )
-	ROM_LOAD( "7.bin", 0x18000, 0x8000,          CRC(9c564f44) SHA1(c8d727b63ac29c24659d12f1d573c81e3fbf6745) )
+	ROM_LOAD( "7.bin", 0x18000, 0x8000, BAD_DUMP CRC(9c564f44) SHA1(c8d727b63ac29c24659d12f1d573c81e3fbf6745) )
 
 	ROM_REGION( 0x02000, "gfx1", 0 )
 	ROM_LOAD( "9.bin", 0x00000, 0x2000, CRC(58c0b29b) SHA1(9dc075f8afae7e8fe164a9fe325e9948cdc7e4bb) ) /* characters */ /* Same as parent */
@@ -569,7 +568,7 @@ ROM_START( brkthrut )
 	/* background */
 	/* we do a lot of scatter loading here, to place the data in a format */
 	/* which can be decoded by MAME's standard functions */
-	ROM_LOAD( "2.bin", 0x00000, 0x4000, CRC(920cc56a) SHA1(c75806691073f1f3bd54dcaca4c14155ecf4471d) ) /* bitplanes 1,2 for bank 1,2 */ /* Same as parent */  
+	ROM_LOAD( "2.bin", 0x00000, 0x4000, CRC(920cc56a) SHA1(c75806691073f1f3bd54dcaca4c14155ecf4471d) ) /* bitplanes 1,2 for bank 1,2 */ /* Same as parent */
 	ROM_CONTINUE(             0x08000, 0x4000 )             /* bitplanes 1,2 for bank 3,4 */
 	ROM_LOAD( "1.bin", 0x10000, 0x4000, CRC(6c47dc43) SHA1(3274fb8ddf0e0c91f5796677255ade78e3b3f9d6) ) /* bitplanes 1,2 for bank 5,6 */
 	ROM_CONTINUE(             0x18000, 0x4000 )             /* bitplanes 1,2 for bank 7,8 */

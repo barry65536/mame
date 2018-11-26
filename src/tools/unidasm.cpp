@@ -92,7 +92,7 @@ using util::BIT;
 #include "cpu/melps4/melps4d.h"
 #include "cpu/minx/minxd.h"
 #include "cpu/mips/mips3dsm.h"
-#include "cpu/mips/r3kdasm.h"
+#include "cpu/mips/mips1dsm.h"
 #include "cpu/mn10200/mn102dis.h"
 #include "cpu/nanoprocessor/nanoprocessor_dasm.h"
 #include "cpu/nec/necdasm.h"
@@ -122,6 +122,7 @@ using util::BIT;
 #include "cpu/spc700/spc700ds.h"
 #include "cpu/ssem/ssemdasm.h"
 #include "cpu/ssp1601/ssp1601d.h"
+#include "cpu/st62xx/st62xx_dasm.h"
 #include "cpu/superfx/sfx_dasm.h"
 #include "cpu/t11/t11dasm.h"
 #include "cpu/tlcs870/tlcs870d.h"
@@ -419,8 +420,8 @@ static const dasm_table_entry dasm_table[] =
 	{ "powerpc",         be,  0, []() -> util::disasm_interface * { return new powerpc_disassembler; } },
 	{ "pps4",            le,  0, []() -> util::disasm_interface * { return new pps4_disassembler; } },
 	{ "psxcpu",          le,  0, []() -> util::disasm_interface * { return new psxcpu_disassembler; } },
-	{ "r3000be",         be,  0, []() -> util::disasm_interface * { return new r3000_disassembler; } },
-	{ "r3000le",         le,  0, []() -> util::disasm_interface * { return new r3000_disassembler; } },
+	{ "mips1be",         be,  0, []() -> util::disasm_interface * { return new mips1_disassembler; } },
+	{ "mips1le",         le,  0, []() -> util::disasm_interface * { return new mips1_disassembler; } },
 	{ "rsp",             le,  0, []() -> util::disasm_interface * { return new rsp_disassembler; } },
 	{ "s2650",           le,  0, []() -> util::disasm_interface * { return new s2650_disassembler(&s2650_unidasm); } },
 	{ "saturn",          le,  0, []() -> util::disasm_interface * { return new saturn_disassembler(&saturn_unidasm); } },
@@ -450,6 +451,7 @@ static const dasm_table_entry dasm_table[] =
 	{ "spc700",          le,  0, []() -> util::disasm_interface * { return new spc700_disassembler; } },
 	{ "ssem",            le,  0, []() -> util::disasm_interface * { return new ssem_disassembler; } },
 	{ "ssp1601",         be, -1, []() -> util::disasm_interface * { return new ssp1601_disassembler; } },
+	{ "st62xx",          le,  0, []() -> util::disasm_interface * { return new st62xx_disassembler; } },
 	{ "superfx",         le,  0, []() -> util::disasm_interface * { return new superfx_disassembler(&superfx_unidasm); } },
 	{ "t11",             le,  0, []() -> util::disasm_interface * { return new t11_disassembler; } },
 	{ "tlcs870",         le,  0, []() -> util::disasm_interface * { return new tlcs870_disassembler; } },

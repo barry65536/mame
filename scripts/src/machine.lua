@@ -3228,6 +3228,18 @@ end
 
 ---------------------------------------------------
 --
+--@src/devices/machine/dp8573.h,MACHINES["DP8573"] = true
+---------------------------------------------------
+
+if (MACHINES["DP8573"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/dp8573.cpp",
+		MAME_DIR .. "src/devices/machine/dp8573.h",
+	}
+end
+
+---------------------------------------------------
+--
 --@src/devices/machine/pc_lpt.h,MACHINES["PC_LPT"] = true
 ---------------------------------------------------
 
@@ -3805,5 +3817,29 @@ if (MACHINES["Z8038"]~=null) then
 	files {
 		MAME_DIR .. "src/devices/machine/z8038.cpp",
 		MAME_DIR .. "src/devices/machine/z8038.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/scc2698b.h,MACHINES["SCC2698B"] = true
+---------------------------------------------------
+
+if (MACHINES["SCC2698B"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/scc2698b.cpp",
+		MAME_DIR .. "src/devices/machine/scc2698b.h",
+	}
+end
+
+---------------------------------------------------
+--
+--@src/devices/machine/aic6250.h,MACHINES["AIC6250"] = true
+---------------------------------------------------
+
+if (MACHINES["AIC6250"]~=null) then
+	files {
+		MAME_DIR .. "src/devices/machine/aic6250.cpp",
+		MAME_DIR .. "src/devices/machine/aic6250.h",
 	}
 end

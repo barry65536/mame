@@ -346,7 +346,7 @@ W17 pulls J1 serial  port pin 1 to GND when set (chassis to logical GND).
 #include "machine/wd_fdc.h"
 #include "formats/rx50_dsk.h"
 #include "formats/pc_dsk.h" // PC Formats
-#include "imagedev/flopdrv.h"
+#include "imagedev/floppy.h"
 
 #include "imagedev/harddriv.h"
 #include "machine/wd2010.h"
@@ -432,7 +432,7 @@ W17 pulls J1 serial  port pin 1 to GND when set (chassis to logical GND).
 #define MHFU_RESET              -250
 
 // ----------------------------------------------------------------------------------------------
-// NEC 7220 GDC     ***************** GDC-NEW ********************
+// NEC 7220 GDC     *************************************
 
 // Indirect Register, port $53, see page 181 of AA-AE36A (PDF):
 // (actual values : see comments)
@@ -527,10 +527,10 @@ public:
 		m_ext_ram(*this, "ext_ram"),
 
 		m_rtc(*this, "rtc"),
-		m_hgdc(*this, "upd7220"), // GDC-NEW
+		m_hgdc(*this, "upd7220"), // GDC
 
 		m_screen2(*this, "screen2"),
-		m_palette2(*this, "palette2"), // GDC-NEW
+		m_palette2(*this, "palette2"), // GDC
 		m_video_ram(*this, "vram"),
 
 		m_digits(*this, "digit%u", 0U)
@@ -688,7 +688,7 @@ private:
 
 	optional_device<ds1315_device> m_rtc;
 
-	required_device<upd7220_device> m_hgdc;  // GDC-NEW
+	required_device<upd7220_device> m_hgdc;  // GDC
 	required_device<screen_device> m_screen2;
 	required_device<palette_device> m_palette2;
 	required_shared_ptr<uint16_t> m_video_ram;
@@ -1102,7 +1102,7 @@ static INPUT_PORTS_START(rainbow100b_in)
 	PORT_DIPSETTING(0x00, DEF_STR(Off))
 	PORT_DIPSETTING(0x01, DEF_STR(On))
 
-	PORT_START("GRAPHICS OPTION") // GDC-NEW
+	PORT_START("GRAPHICS OPTION") // GDC
 	PORT_DIPNAME(0x01, 0x00, "GRAPHICS OPTION") PORT_TOGGLE
 	PORT_DIPSETTING(0x00, DEF_STR(Off))
 	PORT_DIPSETTING(0x01, DEF_STR(On))
@@ -1139,7 +1139,7 @@ static INPUT_PORTS_START(rainbow100b_in)
 	PORT_DIPSETTING(0x00, DEF_STR(Off))
 	PORT_DIPSETTING(0x01, DEF_STR(On))
 
-	PORT_START("MONITOR CONFIGURATION") // GDC-NEW
+	PORT_START("MONITOR CONFIGURATION") // GDC
 	PORT_DIPNAME(0x03, 0x03, "MONITOR CONFIGURATION")
 	PORT_DIPSETTING(0x01, "MONO ONLY / 4 to 16 monochrome shades (single VR-201)")
 	PORT_DIPSETTING(0x02, "COLOR ONLY (single VR-241 with BCC-17 cable)")
@@ -2561,7 +2561,7 @@ IRQ_CALLBACK_MEMBER(rainbow_state::irq_callback)
 	return intnum;
 }
 
-// NEC7220 Vsync IRQ ***************************************** GDC-NEW
+// NEC7220 Vsync IRQ ***************************************** GDC
 
 // VERIFY: SCROLL_MAP & COLOR_MAP are updated at the next VSYNC (not immediately)... Are there more registers?
 WRITE_LINE_MEMBER(rainbow_state::GDC_vblank_irq)
@@ -3204,7 +3204,7 @@ static GFXDECODE_START(gfx_rainbow)
 	GFXDECODE_ENTRY("chargen", 0x0000, rainbow_charlayout, 0, 1)
 GFXDECODE_END
 
-// Allocate 512 K (4 x 64 K x 16 bit) of memory (GDC-NEW):
+// Allocate 512 K (4 x 64 K x 16 bit) of memory (GDC):
 void rainbow_state::upd7220_map(address_map &map)
 {
 	map(0x00000, 0x3ffff).rw(FUNC(rainbow_state::vram_r), FUNC(rainbow_state::vram_w)).share("vram");
@@ -3231,21 +3231,21 @@ MACHINE_CONFIG_START(rainbow_state::rainbow)
 	MCFG_SCREEN_PALETTE("vt100_video:palette")
 	MCFG_DEVICE_ADD("gfxdecode", GFXDECODE, "vt100_video:palette", gfx_rainbow)
 
-	MCFG_DEVICE_ADD("vt100_video", RAINBOW_VIDEO, 24.0734_MHz_XTAL)
-
-	MCFG_VT_SET_SCREEN("screen")
-	MCFG_VT_CHARGEN("chargen")
-	MCFG_VT_VIDEO_RAM_CALLBACK(READ8(*this, rainbow_state, read_video_ram_r))
-	MCFG_VT_VIDEO_VERT_FREQ_INTR_CALLBACK(WRITELINE(*this, rainbow_state, video_interrupt))
+	RAINBOW_VIDEO(config, m_crtc, 24.0734_MHz_XTAL);
+	m_crtc->set_screen("screen");
+	m_crtc->set_chargen("chargen");
+	m_crtc->ram_rd_callback().set(FUNC(rainbow_state::read_video_ram_r));
+	m_crtc->vert_freq_intr_wr_callback().set(FUNC(rainbow_state::video_interrupt));
 
 	// *************************** COLOR GRAPHICS (OPTION) **************************************
 	// While the OSC frequency is confirmed, the divider is not (refresh rate is ~60 Hz with 32).
-	MCFG_DEVICE_ADD("upd7220", UPD7220, 31188000 / 32) // Duell schematics shows a 31.188 Mhz oscillator (confirmed by RFKA).
-	MCFG_UPD7220_VSYNC_CALLBACK(WRITELINE(*this, rainbow_state, GDC_vblank_irq)) // "The vsync callback line needs to be below the 7220 DEVICE_ADD line."
+	UPD7220(config, m_hgdc, 31188000 / 32); // Duell schematics shows a 31.188 Mhz oscillator (confirmed by RFKA).
+	m_hgdc->vsync_wr_callback().set(FUNC(rainbow_state::GDC_vblank_irq)); // "The vsync callback line needs to be below the 7220 DEVICE_ADD line."
 
-	MCFG_DEVICE_ADDRESS_MAP(0, upd7220_map)
-	MCFG_UPD7220_DISPLAY_PIXELS_CALLBACK_OWNER(rainbow_state, hgdc_display_pixels)
-	MCFG_VIDEO_SET_SCREEN("screen2") // SET_SCREEN needs to be added after 7720 device in the machine config, not after the screen.
+	m_hgdc->set_addrmap(0, &rainbow_state::upd7220_map);
+	m_hgdc->set_display_pixels_callback(FUNC(rainbow_state::hgdc_display_pixels), this);
+	m_hgdc->set_screen(m_screen2); // set_screen needs to be added after 7720 device in the machine config, not after the screen.
+
 	MCFG_PALETTE_ADD("palette2", 32)
 
 	MCFG_SCREEN_ADD("screen2", RASTER)
@@ -3288,7 +3288,7 @@ MACHINE_CONFIG_START(rainbow_state::rainbow)
 
 	// Always set seek complete and track 00 signal (not super clean, but does not affect operation):
 	m_hdc->in_sc_callback().set_constant(1);                             // SEEK COMPLETE (VCC = complete)
-	m_hdc->in_tk000_callback().set_constant(1); 			     // TRACK 00 signal (= from drive)
+	m_hdc->in_tk000_callback().set_constant(1);                  // TRACK 00 signal (= from drive)
 
 	MCFG_HARDDISK_ADD("decharddisk1")
 	/// ******************************** / HARD DISK CONTROLLER ****************************************

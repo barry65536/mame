@@ -89,8 +89,8 @@ deerhunt,wschamp:
   in to the deer. In wschamp intro the GPS unit should zoom to the high scores.
 
 wschampb:
-- dumps of the program roms matched the hand written checksum for each chip, but
-  the boot screen reports NG for both roms. - Is this correct and a bug from the
+- dumps of the program ROMs matched the hand written checksum for each chip, but
+  the boot screen reports NG for both ROMs. - Is this correct and a bug from the
   original release? Is that why the next bug fix release is v1.01? IE: such a
   a minor increase in the version number.
 
@@ -749,12 +749,6 @@ void seta2_state::telpacfl_map(address_map &map)
 
 // Touchscreen
 
-#define MCFG_FUNCUBE_TOUCHSCREEN_ADD( _tag, _clock ) \
-	MCFG_DEVICE_ADD( _tag, FUNCUBE_TOUCHSCREEN, _clock )
-
-#define MCFG_FUNCUBE_TOUCHSCREEN_TX_CALLBACK(_devcb) \
-	downcast<funcube_touchscreen_device &>(*device).set_tx_cb(DEVCB_##_devcb);
-
 class funcube_touchscreen_device : public device_t,
 									public device_serial_interface
 {
@@ -762,7 +756,7 @@ public:
 	funcube_touchscreen_device(const machine_config &mconfig, const char *tag, device_t *owner, uint32_t clock);
 
 	virtual ioport_constructor device_input_ports() const override;
-	template <class Object> devcb_base &set_tx_cb(Object &&cb) { return m_tx_cb.set_callback(std::forward<Object>(cb)); }
+	auto tx_cb() { return m_tx_cb.bind(); }
 
 protected:
 	virtual void device_start() override;
@@ -2575,13 +2569,13 @@ INTERRUPT_GEN_MEMBER(seta2_state::samshoot_interrupt)
 }
 
 MACHINE_CONFIG_START(seta2_state::seta2)
-	MCFG_DEVICE_ADD("maincpu", M68301, XTAL(50'000'000)/3)   // !! TMP68301 !!
+	MCFG_DEVICE_ADD(m_maincpu, M68301, XTAL(50'000'000)/3)   // !! TMP68301 !!
 	MCFG_DEVICE_PROGRAM_MAP(mj4simai_map)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", seta2_state,  seta2_interrupt)
 	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DEVICE("tmp68301",tmp68301_device,irq_callback)
 
-	MCFG_DEVICE_ADD("tmp68301", TMP68301, 0)
-	MCFG_TMP68301_CPU("maincpu")
+	TMP68301(config, m_tmp68301, 0);
+	m_tmp68301->set_cputag(m_maincpu);
 
 	WATCHDOG_TIMER(config, "watchdog");
 
@@ -2613,9 +2607,8 @@ MACHINE_CONFIG_START(seta2_state::gundamex)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(gundamex_map)
 
-	MCFG_DEVICE_MODIFY("tmp68301")
-	MCFG_TMP68301_IN_PARALLEL_CB(READ16(*this, seta2_state, gundamex_eeprom_r))
-	MCFG_TMP68301_OUT_PARALLEL_CB(WRITE16(*this, seta2_state, gundamex_eeprom_w))
+	m_tmp68301->in_parallel_callback().set(FUNC(seta2_state::gundamex_eeprom_r));
+	m_tmp68301->out_parallel_callback().set(FUNC(seta2_state::gundamex_eeprom_w));
 
 	EEPROM_93C46_16BIT(config, "eeprom");
 
@@ -2697,8 +2690,7 @@ MACHINE_CONFIG_START(seta2_state::reelquak)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(reelquak_map)
 
-	MCFG_DEVICE_MODIFY("tmp68301")
-	MCFG_TMP68301_OUT_PARALLEL_CB(WRITE16(*this, seta2_state, reelquak_leds_w))
+	m_tmp68301->out_parallel_callback().set(FUNC(seta2_state::reelquak_leds_w));
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 	MCFG_TICKET_DISPENSER_ADD("dispenser", attotime::from_msec(200), TICKET_MOTOR_ACTIVE_HIGH, TICKET_STATUS_ACTIVE_LOW)
@@ -2717,8 +2709,7 @@ MACHINE_CONFIG_START(seta2_state::samshoot)
 	MCFG_DEVICE_PROGRAM_MAP(samshoot_map)
 	MCFG_DEVICE_PERIODIC_INT_DRIVER(seta2_state, samshoot_interrupt, 60)
 
-	MCFG_DEVICE_MODIFY("tmp68301")
-	MCFG_TMP68301_IN_PARALLEL_CB(IOPORT("DSW2"))
+	m_tmp68301->in_parallel_callback().set_ioport("DSW2");
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
@@ -2750,8 +2741,7 @@ MACHINE_CONFIG_START(seta2_state::telpacfl)
 	MCFG_DEVICE_MODIFY("maincpu")
 	MCFG_DEVICE_PROGRAM_MAP(telpacfl_map)
 
-	MCFG_DEVICE_MODIFY("tmp68301")
-	MCFG_TMP68301_IN_PARALLEL_CB(IOPORT("KNOB"))
+	m_tmp68301->in_parallel_callback().set_ioport("KNOB");
 
 	EEPROM_93C46_16BIT(config, "eeprom"); // not hooked up, seems unused
 
@@ -2805,8 +2795,7 @@ MACHINE_CONFIG_START(funcube_state::funcube)
 
 	MCFG_MCF5206E_PERIPHERAL_ADD("maincpu_onboard")
 
-	MCFG_FUNCUBE_TOUCHSCREEN_ADD("touchscreen", 200)
-	MCFG_FUNCUBE_TOUCHSCREEN_TX_CALLBACK(WRITELINE(":sub:sci1", h8_sci_device, rx_w))
+	FUNCUBE_TOUCHSCREEN(config, "touchscreen", 200).tx_cb().set(":sub:sci1", FUNC(h8_sci_device::rx_w));
 
 	NVRAM(config, "nvram", nvram_device::DEFAULT_ALL_0);
 
@@ -2859,13 +2848,13 @@ MACHINE_CONFIG_END
 
 
 MACHINE_CONFIG_START(seta2_state::namcostr)
-	MCFG_DEVICE_ADD("maincpu", M68301, XTAL(50'000'000)/3)   // !! TMP68301 !!
+	MCFG_DEVICE_ADD(m_maincpu, M68301, XTAL(50'000'000)/3)   // !! TMP68301 !!
 	MCFG_DEVICE_PROGRAM_MAP(namcostr_map)
 	MCFG_DEVICE_VBLANK_INT_DRIVER("screen", seta2_state,  seta2_interrupt)
 	MCFG_DEVICE_IRQ_ACKNOWLEDGE_DEVICE("tmp68301",tmp68301_device,irq_callback)
 
-	MCFG_DEVICE_ADD("tmp68301", TMP68301, 0)  // does this have a ticket dispenser?
-	MCFG_TMP68301_CPU("maincpu")
+	TMP68301(config, m_tmp68301, 0);  // does this have a ticket dispenser?
+	m_tmp68301->set_cputag(m_maincpu);
 
 	// video hardware
 	MCFG_SCREEN_ADD("screen", RASTER)
@@ -3012,7 +3001,7 @@ SW4  - Single position slider switch
 
 U3  - Is a 27C4002 EPROM
 U49 - Is a 27C1001 EPROM
-U42, U43 & U47 are MASK ROMs read as 27C322
+U42, U43 & U47 are mask ROMs read as 27C322
 
 The same H8/3007 code "FC21 IOPR-0" at U49 is used for FUNCUBE 2,3,4 & 5
 
@@ -4474,7 +4463,7 @@ ROM_START( wschampb ) /* Wing Shooting Championship V1.00, dumps match listed ch
 	ROM_LOAD( "as1005m01.u18", 0x000000, 0x400000, CRC(e4b137b8) SHA1(4d8d15073c51f7d383282cc5755ae5b2eab6226c) )
 ROM_END
 
-ROM_START( trophyh ) /* Version 1.00 - v: Thu Mar 28 12:35:50 2002 JST-9 - on a B0-010A PCB with all MASK ROMs */
+ROM_START( trophyh ) /* Version 1.00 - v: Thu Mar 28 12:35:50 2002 JST-9 - on a B0-010A PCB with all mask ROMs */
 	ROM_REGION( 0x200000, "maincpu", 0 )    // TMP68301 Code
 	ROM_LOAD16_BYTE( "as1106e01.u06", 0x000000, 0x100000, CRC(b4950882) SHA1(2749f7ffc5b543c9f39815f0913a1d1e385b63f4) ) /* also commonly labeled as: Trophy U6 Ver. 1.00 D8DA */
 	ROM_LOAD16_BYTE( "as1107e01.u07", 0x000001, 0x100000, CRC(19ee67cb) SHA1(e75ce66d3ff5aad46ba997c09d6514260e617f55) ) /* also commonly labeled as: Trophy U7 Ver. 1.00 CEEF */
@@ -4517,7 +4506,7 @@ ROM_START( trophyht ) /* V1.00 Location Test - v: Tue Feb 26 18:18:43 2002 JST-9
 	ROM_LOAD( "as1104m01.u41",   0x1800000, 0x800000, CRC(387882e9) SHA1(0fdd0c77dabd1066c6f3bd64e357236a76f524ab) ) /* Load these in until the flash ROMs are dumped */
 
 	ROM_REGION( 0x400000, "x1snd", 0 )  // Samples
-	ROM_LOAD( "as1105m01.u18", 0x000000, 0x400000, CRC(633d0df8) SHA1(3401c424f5c207ef438a9269e0c0e7d482771fed) ) /* unlabeled 27C322 with same data as AS1105M01 MASK rom */
+	ROM_LOAD( "as1105m01.u18", 0x000000, 0x400000, CRC(633d0df8) SHA1(3401c424f5c207ef438a9269e0c0e7d482771fed) ) /* unlabeled 27C322 with same data as AS1105M01 mask ROM */
 ROM_END
 
 /***************************************************************************
